@@ -1,9 +1,11 @@
 package br.com.agibank.clientes.domain.usecase;
 
 import br.com.agibank.clientes.domain.exception.ClienteNaoEncontradoException;
-import br.com.agibank.clientes.domain.exception.NegocioException;
+import br.com.agibank.clientes.domain.exception.ClienteException;
 import br.com.agibank.clientes.domain.model.Cliente;
 import br.com.agibank.clientes.domain.repository.ClienteRepository;
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -11,13 +13,10 @@ import java.util.List;
 import java.util.UUID;
 
 @Service
+@RequiredArgsConstructor
 public class ClienteServiceImpl implements ClienteUseCase {
 
     private final ClienteRepository clienteRepository;
-
-    public ClienteServiceImpl(ClienteRepository clienteRepository) {
-        this.clienteRepository = clienteRepository;
-    }
 
     @Override
     public List<Cliente> listarClientes() {
@@ -34,7 +33,7 @@ public class ClienteServiceImpl implements ClienteUseCase {
     @Transactional
     public Cliente cadastrarCliente(Cliente cliente) {
         if (clienteRepository.existePorCpf(cliente.getCpf())) {
-            throw new NegocioException(String.format("Já existe um cliente cadastrado com o CPF %s", cliente.getCpf()));
+            throw new ClienteException(String.format("Já existe um cliente cadastrado com o CPF %s", cliente.getCpf()));
         }
         
         return clienteRepository.salvar(cliente);
@@ -48,7 +47,7 @@ public class ClienteServiceImpl implements ClienteUseCase {
         
         if (!clienteExistente.getCpf().equals(cliente.getCpf()) && 
             clienteRepository.existePorCpf(cliente.getCpf())) {
-            throw new NegocioException(String.format("Já existe um cliente cadastrado com o CPF %s", cliente.getCpf()));
+            throw new ClienteException(String.format("Já existe um cliente cadastrado com o CPF %s", cliente.getCpf()));
         }
         
         return clienteRepository.salvar(cliente);

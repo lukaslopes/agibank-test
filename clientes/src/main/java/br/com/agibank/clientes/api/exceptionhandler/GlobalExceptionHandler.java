@@ -1,7 +1,7 @@
 package br.com.agibank.clientes.api.exceptionhandler;
 
 import br.com.agibank.clientes.domain.exception.ClienteNaoEncontradoException;
-import br.com.agibank.clientes.domain.exception.NegocioException;
+import br.com.agibank.clientes.domain.exception.ClienteException;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpHeaders;
@@ -46,8 +46,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return handleExceptionInternal(ex, problemDetail, headers, status, request);
     }
 
-    @ExceptionHandler(NegocioException.class)
-    public ResponseEntity<?> handleNegocio(NegocioException ex, WebRequest request) {
+    @ExceptionHandler(ClienteException.class)
+    public ResponseEntity<?> handleNegocio(ClienteException ex, WebRequest request) {
         HttpStatus status = HttpStatus.BAD_REQUEST;
         ProblemDetail problemDetail = createProblemDetail(ex, status, ex.getMessage());
         return handleExceptionInternal(ex, problemDetail, new HttpHeaders(), status, request);

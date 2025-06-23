@@ -1,7 +1,7 @@
 package br.com.agibank.clientes.domain.usecase;
 
 import br.com.agibank.clientes.domain.exception.ClienteNaoEncontradoException;
-import br.com.agibank.clientes.domain.exception.NegocioException;
+import br.com.agibank.clientes.domain.exception.ClienteException;
 import br.com.agibank.clientes.domain.model.Cliente;
 import br.com.agibank.clientes.domain.repository.ClienteRepository;
 import br.com.agibank.clientes.utils.TestDataCreator;
@@ -100,7 +100,7 @@ class ClienteServiceImplTest {
         when(clienteRepository.existePorCpf(cliente.getCpf())).thenReturn(true);
 
         // Act & Assert
-        assertThrows(NegocioException.class, 
+        assertThrows(ClienteException.class, 
             () -> clienteService.cadastrarCliente(cliente));
         verify(clienteRepository, never()).salvar(any(Cliente.class));
     }

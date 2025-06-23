@@ -1,14 +1,14 @@
 package br.com.agibank.clientes.domain.exception;
 
-public class NegocioException extends RuntimeException {
+public class ClienteException extends RuntimeException {
     
     private static final long serialVersionUID = 1L;
 
-    public NegocioException(String mensagem) {
+    public ClienteException(String mensagem) {
         super(mensagem);
     }
     
-    public NegocioException(String mensagem, Throwable causa) {
+    public ClienteException(String mensagem, Throwable causa) {
         super(mensagem, causa);
     }
 }
