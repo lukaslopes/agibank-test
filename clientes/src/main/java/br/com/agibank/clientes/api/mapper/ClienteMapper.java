@@ -1,6 +1,7 @@
 package br.com.agibank.clientes.api.mapper;
 
 import br.com.agibank.clientes.api.dto.ClienteDTO;
+import br.com.agibank.clientes.api.dto.ClienteDTOResponse;
 import br.com.agibank.clientes.domain.model.Cliente;
 import br.com.agibank.clientes.domain.model.Endereco;
 import org.springframework.stereotype.Component;
@@ -18,9 +19,7 @@ public class ClienteMapper {
         if (dto == null) {
             return null;
         }
-
         return Cliente.builder()
-                .id(dto.getId())
                 .nome(dto.getNome())
                 .cpf(dto.getCpf())
                 .dataNascimento(dto.getDataNascimento())
@@ -29,12 +28,11 @@ public class ClienteMapper {
                 .build();
     }
     
-    public ClienteDTO toDTO(Cliente cliente) {
+    public ClienteDTOResponse toDTO(Cliente cliente) {
         if (cliente == null) {
             return null;
         }
-        
-        return ClienteDTO.builder()
+        return ClienteDTOResponse.builder()
                 .id(cliente.getId())
                 .nome(cliente.getNome())
                 .cpf(cliente.getCpf())
@@ -44,7 +42,7 @@ public class ClienteMapper {
                 .build();
     }
     
-    public List<ClienteDTO> toDTOList(List<Cliente> clientes) {
+    public List<ClienteDTOResponse> toDTOList(List<Cliente> clientes) {
         if (clientes == null) {
             return null;
         }
@@ -80,7 +78,7 @@ public class ClienteMapper {
         }
     }
     
-    private Endereco toEnderecoDomain(ClienteDTO.EnderecoDTO dto) {
+    protected Endereco toEnderecoDomain(ClienteDTO.EnderecoDTO dto) {
         if (dto == null) {
             return null;
         }
@@ -96,7 +94,7 @@ public class ClienteMapper {
                 .build();
     }
     
-    private ClienteDTO.EnderecoDTO toEnderecoDTO(Endereco endereco) {
+    protected ClienteDTO.EnderecoDTO toEnderecoDTO(Endereco endereco) {
         if (endereco == null) {
             return null;
         }
@@ -112,7 +110,7 @@ public class ClienteMapper {
                 .build();
     }
     
-    private void updateEnderecoFromDTO(Endereco endereco, ClienteDTO.EnderecoDTO dto) {
+    protected void updateEnderecoFromDTO(Endereco endereco, ClienteDTO.EnderecoDTO dto) {
         if (dto.getCep() != null) {
             endereco.setCep(dto.getCep());
         }

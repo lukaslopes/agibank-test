@@ -1,10 +1,11 @@
 package br.com.agibank.clientes.infrastructure.persistence.repository;
 
 import br.com.agibank.clientes.domain.model.Cliente;
+import br.com.agibank.clientes.fixture.ClienteFixture;
 import br.com.agibank.clientes.infrastructure.persistence.entity.ClienteEntity;
-import br.com.agibank.clientes.utils.TestDataCreator;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.TypedQuery;
+import br.com.agibank.clientes.infrastructure.persistence.entity.EnderecoEmbeddable;
+import br.com.agibank.clientes.infrastructure.persistence.mapper.ClienteEntityMapper;
+import br.com.agibank.clientes.infrastructure.persistence.repository.jpa.ClienteJpaRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,10 +25,10 @@ import static org.mockito.Mockito.*;
 class ClienteRepositoryImplTest {
 
     @Mock
-    private EntityManager manager;
-
+    private ClienteJpaRepository jpaRepository;
+    
     @Mock
-    private TypedQuery<ClienteEntity> query;
+    private ClienteEntityMapper clienteEntityMapper;
 
     @InjectMocks
     private ClienteRepositoryImpl clienteRepository;
@@ -37,106 +38,107 @@ class ClienteRepositoryImplTest {
 
     @BeforeEach
     void setUp() {
-        cliente = TestDataCreator.createCliente();
-        clienteEntity = ClienteEntity.fromDomain(cliente);
+        cliente = ClienteFixture.umClienteSemId();
+        clienteEntity = ClienteEntity.builder()
+            .id(cliente.getId())
+            .cpf(cliente.getCpf())
+            .nome(cliente.getNome())
+            .dataNascimento(cliente.getDataNascimento())
+            .telefone(cliente.getTelefone())
+            .endereco(EnderecoEmbeddable.builder()
+                .logradouro(cliente.getEndereco().getLogradouro())
+                .numero(cliente.getEndereco().getNumero())
+                .complemento(cliente.getEndereco().getComplemento())
+                .bairro(cliente.getEndereco().getBairro())
+                .cidade(cliente.getEndereco().getCidade())
+                .estado(cliente.getEndereco().getEstado())
+                .cep(cliente.getEndereco().getCep())
+                .build())
+            .build();
     }
 
     @Test
     void listarTodos_DeveRetornarListaDeClientes() {
-        // Arrange
-        when(manager.createQuery(anyString(), eq(ClienteEntity.class))).thenReturn(query);
-        when(query.getResultList()).thenReturn(List.of(clienteEntity));
+        when(jpaRepository.findAll()).thenReturn(List.of(clienteEntity));
+        when(clienteEntityMapper.toDomain(clienteEntity)).thenReturn(cliente);
 
-        // Act
         var clientes = clienteRepository.listarTodos();
 
-        // Assert
         assertNotNull(clientes);
         assertFalse(clientes.isEmpty());
         assertEquals(1, clientes.size());
-        verify(manager).createQuery("from ClienteEntity", ClienteEntity.class);
+        verify(jpaRepository).findAll();
+        verify(clienteEntityMapper).toDomain(clienteEntity);
     }
 
     @Test
     void buscarPorId_DeveRetornarCliente_QuandoEncontrar() {
-        // Arrange
-        when(manager.find(ClienteEntity.class, clienteEntity.getId())).thenReturn(clienteEntity);
+        when(jpaRepository.findById(clienteEntity.getId())).thenReturn(Optional.of(clienteEntity));
+        when(clienteEntityMapper.toDomain(clienteEntity)).thenReturn(cliente);
 
-        // Act
         var clienteEncontrado = clienteRepository.buscarPorId(clienteEntity.getId());
 
-        // Assert
         assertTrue(clienteEncontrado.isPresent());
         assertEquals(clienteEntity.getId(), clienteEncontrado.get().getId());
+        verify(jpaRepository).findById(clienteEntity.getId());
+        verify(clienteEntityMapper).toDomain(clienteEntity);
     }
 
     @Test
     void buscarPorId_DeveRetornarVazio_QuandoNaoEncontrar() {
-        // Arrange
-        when(manager.find(ClienteEntity.class, any(UUID.class))).thenReturn(null);
+        when(jpaRepository.findById(any(UUID.class))).thenReturn(Optional.empty());
 
-        // Act
         var clienteEncontrado = clienteRepository.buscarPorId(UUID.randomUUID());
 
-        // Assert
         assertTrue(clienteEncontrado.isEmpty());
+        verify(clienteEntityMapper, never()).toDomain(any(ClienteEntity.class));
     }
 
     @Test
     void buscarPorCpf_DeveRetornarCliente_QuandoEncontrar() {
-        // Arrange
-        when(manager.createQuery(anyString(), eq(ClienteEntity.class))).thenReturn(query);
-        when(query.setParameter(eq("cpf"), anyString())).thenReturn(query);
-        when(query.getResultStream()).thenReturn(List.of(clienteEntity).stream());
-
-        // Act
-        var clienteEncontrado = clienteRepository.buscarPorCpf("12345678901");
-
-        // Assert
+        String cpf = "12345678901";
+        when(jpaRepository.findByCpf(cpf)).thenReturn(Optional.of(clienteEntity));
+        when(clienteEntityMapper.toDomain(clienteEntity)).thenReturn(cliente);
+        
+        var clienteEncontrado = clienteRepository.buscarPorCpf(cpf);
+        
         assertTrue(clienteEncontrado.isPresent());
         assertEquals(clienteEntity.getCpf(), clienteEncontrado.get().getCpf());
+        verify(jpaRepository).findByCpf(cpf);
+        verify(clienteEntityMapper).toDomain(clienteEntity);
     }
 
     @Test
     void salvar_DevePersistirCliente_QuandoNovo() {
-        // Arrange
-        when(manager.merge(any(ClienteEntity.class))).thenReturn(clienteEntity);
-
-        // Act
+        when(clienteEntityMapper.toEntity(cliente)).thenReturn(clienteEntity);
+        when(jpaRepository.save(clienteEntity)).thenReturn(clienteEntity);
+        when(clienteEntityMapper.toDomain(clienteEntity)).thenReturn(cliente);
+        
         var clienteSalvo = clienteRepository.salvar(cliente);
 
-        // Assert
         assertNotNull(clienteSalvo);
         assertEquals(cliente.getCpf(), clienteSalvo.getCpf());
+        verify(clienteEntityMapper).toEntity(cliente);
+        verify(jpaRepository).save(clienteEntity);
+        verify(clienteEntityMapper).toDomain(clienteEntity);
     }
 
     @Test
     void deletar_DeveRemoverCliente_QuandoExistir() {
-        // Arrange
-        when(manager.find(ClienteEntity.class, cliente.getId())).thenReturn(clienteEntity);
-        doNothing().when(manager).remove(clienteEntity);
+        doNothing().when(jpaRepository).deleteById(cliente.getId());
 
-        // Act
         clienteRepository.deletar(cliente);
 
-
-        // Assert
-        verify(manager).remove(clienteEntity);
+        verify(jpaRepository).deleteById(cliente.getId());
     }
-
 
     @Test
     void existePorCpf_DeveRetornarTrue_QuandoCpfExistir() {
-        // Arrange
-        TypedQuery<Long> countQuery = mock(TypedQuery.class);
-        when(manager.createQuery(anyString(), eq(Long.class))).thenReturn(countQuery);
-        when(countQuery.setParameter(eq("cpf"), anyString())).thenReturn(countQuery);
-        when(countQuery.getSingleResult()).thenReturn(1L);
+        when(jpaRepository.existsByCpf(anyString())).thenReturn(true);
 
-        // Act
         boolean existe = clienteRepository.existePorCpf("12345678901");
 
-        // Assert
         assertTrue(existe);
+        verify(jpaRepository).existsByCpf("12345678901");
     }
 }

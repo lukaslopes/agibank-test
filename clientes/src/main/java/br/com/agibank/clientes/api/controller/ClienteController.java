@@ -1,6 +1,7 @@
 package br.com.agibank.clientes.api.controller;
 
 import br.com.agibank.clientes.api.dto.ClienteDTO;
+import br.com.agibank.clientes.api.dto.ClienteDTOResponse;
 import br.com.agibank.clientes.api.mapper.ClienteMapper;
 import br.com.agibank.clientes.domain.usecase.ClienteUseCase;
 import io.swagger.v3.oas.annotations.Operation;
@@ -33,7 +34,7 @@ public class ClienteController {
     @Operation(summary = "Lista todos os clientes", description = "Retorna uma lista com todos os clientes cadastrados")
     @ApiResponse(responseCode = "200", description = "Lista de clientes retornada com sucesso")
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    public List<ClienteDTO> listar() {
+    public List<ClienteDTOResponse> listar() {
         return clienteMapper.toDTOList(clienteUseCase.listarClientes());
     }
 
@@ -43,7 +44,7 @@ public class ClienteController {
         @ApiResponse(responseCode = "404", description = "Cliente não encontrado", content = @Content)
     })
     @GetMapping(value = "/{clienteId}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ClienteDTO buscar(
+    public ClienteDTOResponse buscar(
             @Parameter(description = "ID do cliente a ser buscado", required = true, example = "123e4567-e89b-12d3-a456-426614174000")
             @PathVariable UUID clienteId) {
         return clienteMapper.toDTO(clienteUseCase.buscarClientePorId(clienteId));
@@ -56,7 +57,7 @@ public class ClienteController {
     })
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
-    public ClienteDTO adicionar(
+    public ClienteDTOResponse adicionar(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Dados do cliente a ser cadastrado", required = true)
             @RequestBody @Valid ClienteDTO clienteDTO) {
         var cliente = clienteMapper.toDomain(clienteDTO);
@@ -73,7 +74,7 @@ public class ClienteController {
     @PutMapping(value = "/{clienteId}", 
                consumes = MediaType.APPLICATION_JSON_VALUE, 
                produces = MediaType.APPLICATION_JSON_VALUE)
-    public ClienteDTO atualizar(
+    public ClienteDTOResponse atualizar(
             @Parameter(description = "ID do cliente a ser atualizado", required = true, example = "123e4567-e89b-12d3-a456-426614174000")
             @PathVariable UUID clienteId,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Novos dados do cliente", required = true)

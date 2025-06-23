@@ -1,7 +1,5 @@
 package br.com.agibank.clientes.api.dto;
 
-import br.com.agibank.clientes.domain.model.Cliente;
-import br.com.agibank.clientes.domain.model.Endereco;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -9,23 +7,17 @@ import jakarta.validation.constraints.Past;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDate;
-import java.util.UUID;
 
-/**
- * DTO para entrada e saída de dados de um cliente
- */
 @Data
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
 public class ClienteDTO {
-
-    private UUID id;
 
     @NotBlank(message = "Nome é obrigatório")
     @Size(max = 100, message = "Nome deve ter no máximo 100 caracteres")
@@ -47,7 +39,7 @@ public class ClienteDTO {
     private EnderecoDTO endereco;
     
     @Data
-    @Builder
+    @SuperBuilder
     @NoArgsConstructor
     @AllArgsConstructor
     public static class EnderecoDTO {
@@ -73,3 +65,5 @@ public class ClienteDTO {
         private String estado;
     }
 }
+    
+    

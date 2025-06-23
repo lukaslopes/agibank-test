@@ -3,8 +3,9 @@ package br.com.agibank.clientes.infrastructure.persistence.repository;
 import br.com.agibank.clientes.domain.model.Cliente;
 import br.com.agibank.clientes.domain.repository.ClienteRepository;
 import br.com.agibank.clientes.infrastructure.persistence.entity.ClienteEntity;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
+import br.com.agibank.clientes.infrastructure.persistence.mapper.ClienteEntityMapper;
+import br.com.agibank.clientes.infrastructure.persistence.repository.jpa.ClienteJpaRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,62 +14,47 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Component
+@RequiredArgsConstructor
 public class ClienteRepositoryImpl implements ClienteRepository {
 
-    @PersistenceContext
-    private EntityManager manager;
+    private final ClienteJpaRepository jpaRepository;
+    private final ClienteEntityMapper clienteEntityMapper;
 
     @Override
     public List<Cliente> listarTodos() {
-        return manager.createQuery("from ClienteEntity", ClienteEntity.class)
-                .getResultList()
-                .stream()
-                .map(ClienteEntity::toDomain)
+        return jpaRepository.findAll().stream()
+                .map(clienteEntityMapper::toDomain)
                 .toList();
     }
 
     @Override
     public Optional<Cliente> buscarPorId(UUID id) {
-        ClienteEntity clienteEntity = manager.find(ClienteEntity.class, id);
-        return Optional.ofNullable(clienteEntity).map(ClienteEntity::toDomain);
+        return jpaRepository.findById(id)
+                .map(clienteEntityMapper::toDomain);
     }
 
     @Override
     public Optional<Cliente> buscarPorCpf(String cpf) {
-        String jpql = "from ClienteEntity where cpf = :cpf";
-        return manager.createQuery(jpql, ClienteEntity.class)
-                .setParameter("cpf", cpf)
-                .getResultStream()
-                .findFirst()
-                .map(ClienteEntity::toDomain);
+        return jpaRepository.findByCpf(cpf)
+                .map(clienteEntityMapper::toDomain);
     }
 
     @Override
     @Transactional
     public Cliente salvar(Cliente cliente) {
-        ClienteEntity clienteEntity = ClienteEntity.fromDomain(cliente);
-        if (clienteEntity.getId() == null) {
-            manager.persist(clienteEntity);
-        } else {
-            clienteEntity = manager.merge(clienteEntity);
-        }
-        return clienteEntity.toDomain();
+        ClienteEntity clienteEntity = clienteEntityMapper.toEntity(cliente);
+        ClienteEntity savedEntity = jpaRepository.save(clienteEntity);
+        return clienteEntityMapper.toDomain(savedEntity);
     }
 
     @Override
     @Transactional
     public void deletar(Cliente cliente) {
-        ClienteEntity clienteEntity = manager.find(ClienteEntity.class, cliente.getId());
-        if (clienteEntity != null) {
-            manager.remove(clienteEntity);
-        }
+        jpaRepository.deleteById(cliente.getId());
     }
 
     @Override
     public boolean existePorCpf(String cpf) {
-        String jpql = "select case when count(1) > 0 then true else false end from ClienteEntity where cpf = :cpf";
-        return manager.createQuery(jpql, Boolean.class)
-                .setParameter("cpf", cpf)
-                .getSingleResult();
+        return jpaRepository.existsByCpf(cpf);
     }
 }
