@@ -1,61 +1,93 @@
-# API de Gerenciamento de Clientes
+# Sistema de Gerenciamento de Clientes e Seguros
 
-API RESTful para gerenciamento de clientes desenvolvida com Spring Boot 3.5.3, seguindo os princípios da Clean Architecture e SOLID.
+Lukas Antunes Lopes
+
+## Visão Geral
+
+Este projeto é composto por dois microsserviços que trabalham em conjunto para fornecer um sistema de gerenciamento de clientes e seguros:
+
+1. **Serviço de Clientes (porta 8080)**: Gerencia o cadastro e consulta de clientes.
+2. **Serviço de Seguros (porta 8081)**: Gerencia a simulação e contratação de seguros, integrando-se ao serviço de clientes.
 
 ## Tecnologias
 
-- Java 17
+### Comuns a ambos os serviços
+
+- Java 21
 - Spring Boot 3.5.3
 - Spring Data JPA
 - PostgreSQL
-- MapStruct
 - Lombok
 - OpenAPI (Swagger)
 - JUnit 5
-- Docker
+- Docker e Docker Compose
 
 ## Pré-requisitos
 
-- Java 17 ou superior
+- Java 21 ou superior
 - Maven 3.6.3 ou superior
 - Docker e Docker Compose
-- PostgreSQL (pode ser executado via Docker)
 
 ## Configuração do Ambiente
 
-1. **Banco de Dados**
-   ```bash
-   # Iniciar o PostgreSQL com Docker
-   docker-compose up -d
-   ```
+### 1. Bancos de Dados
 
-2. **Configuração da Aplicação**
-   - O arquivo `application.properties` já está configurado para se conectar ao banco de dados PostgreSQL.
-   - As credenciais padrão são:
-     - Usuário: postgres
-     - Senha: postgres
-     - Banco de dados: clientes_db
-     - Porta: 5432
+O projeto utiliza dois bancos de dados PostgreSQL em contêineres Docker:
 
-## Executando a Aplicação
+```bash
+# Iniciar os contêineres do PostgreSQL
+# clientes-db na porta 5432
+# seguros-db na porta 5433
+docker-compose up -d
+```
 
-1. **Compilar o Projeto**
-   ```bash
-   mvn clean install
-   ```
+#### Configuração dos Bancos:
 
-2. **Executar a Aplicação**
-   ```bash
-   mvn spring-boot:run
-   ```
+**Serviço de Clientes**
 
-3. **Acessar a Documentação da API**
-   - Swagger UI: http://localhost:8080/swagger-ui.html
-   - OpenAPI JSON: http://localhost:8080/api-docs
+- Host: localhost
+- Porta: 5432
+- Banco: clientes_db
+- Usuário: postgres
+- Senha: postgres
+
+**Serviço de Seguros**
+
+- Host: localhost
+- Porta: 5433
+- Banco: seguros_db
+- Usuário: postgres
+- Senha: postgres
+
+## Executando os Serviços
+
+### 1. Serviço de Clientes
+
+```bash
+cd clientes
+mvn spring-boot:run
+```
+
+**Documentação da API**:
+
+- Swagger UI: http://localhost:8080/swagger-ui.html
+- OpenAPI JSON: http://localhost:8080/api-docs
+
+### 2. Serviço de Seguros
+
+```bash
+cd ../seguros
+mvn spring-boot:run
+```
+
+**Documentação da API**:
+
+- Swagger UI: http://localhost:8081/swagger-ui.html
+- OpenAPI JSON: http://localhost:8081/api-docs
 
 ## Endpoints da API
 
-A API possui os seguintes endpoints:
+### Serviço de Clientes (8080)
 
 - `GET /clientes` - Lista todos os clientes
 - `GET /clientes/{id}` - Busca um cliente por ID
@@ -63,7 +95,14 @@ A API possui os seguintes endpoints:
 - `PUT /clientes/{id}` - Atualiza um cliente existente
 - `DELETE /clientes/{id}` - Remove um cliente
 
+### Serviço de Seguros (8081)
+
+- `POST /seguros/simular` - Simula todos os tipos de seguros para um cliente
+- `POST /seguros/contratar` - Contrata um seguro para um cliente
+
 ## Executando os Testes
+
+### Para cada serviço (dentro do diretório do serviço):
 
 ```bash
 # Executar todos os testes
@@ -76,25 +115,50 @@ mvn test -Dgroups=integration
 mvn test -Dgroups=unit
 ```
 
-## Estrutura do Projeto
+## Estrutura dos Projetos
+
+### Serviço de Clientes
 
 ```
-src/
-├── main/
-│   ├── java/
-│   │   └── com/agibank/clientes/
-│   │       ├── api/                    # Camada de API (Controllers, DTOs, Mappers)
-│   │       ├── config/                 # Configurações da aplicação
-│   │       ├── domain/                 # Lógica de negócios
-│   │       │   ├── model/              # Modelos de domínio
-│   │       │   ├── repository/         # Interfaces de repositório
-│   │       │   └── usecase/            # Casos de uso
-│   │       └── infrastructure/         # Implementações de infraestrutura
-│   │           └── persistence/        # JPA entities e repositórios
-│   └── resources/                      # Arquivos de configuração
-└── test/                               # Testes automatizados
+clientes/
+├── src/
+│   ├── main/
+│   │   ├── java/br/com/agibank/clientes/
+│   │   │   ├── api/                    # Controladores e DTOs
+│   │   │   ├── config/                 # Configurações
+│   │   │   ├── domain/                 # Lógica de negócios
+│   │   │   │   ├── model/              # Entidades
+│   │   │   │   ├── repository/         # Repositórios
+│   │   │   │   └── usecase/            # Casos de uso
+│   │   │   └── infrastructure/         # Implementações de infraestrutura
+│   │   └── resources/                  # Arquivos de configuração
+│   └── test/                           # Testes
+└── pom.xml
 ```
+
+### Serviço de Seguros
+
+```
+seguros/
+├── src/
+│   ├── main/
+│   │   ├── java/br/com/agibank/seguros/
+│   │   │   ├── api/                    # Controladores e DTOs
+│   │   │   ├── config/                 # Configurações
+│   │   │   ├── domain/                 # Lógica de negócios
+│   │   │   │   ├── model/              # Entidades
+│   │   │   │   ├── repository/         # Repositórios
+│   │   │   │   └── usecase/            # Casos de uso
+│   │   │   └── infrastructure/         # Clientes API Client e outras implementações
+│   │   └── resources/                  # Arquivos de configuração
+│   └── test/                           # Testes
+└── pom.xml
+```
+
+## Comunicação entre Serviços
+
+O Serviço de Seguros se comunica com o Serviço de Clientes através de uma API REST. A comunicação é feita usando RestTemplate
 
 ## Licença
 
-Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
+Este projeto é um teste técnico para o processo seletivo do Agibank.

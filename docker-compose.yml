@@ -1,4 +1,5 @@
 services:
+  # Banco de dados do serviço de clientes
   postgres-clientes:
     image: postgres:17-alpine
     container_name: clientes-db
@@ -15,7 +16,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-      
+
+  # Banco de dados do serviço de seguros
   postgres-seguros:
     image: postgres:17-alpine
     container_name: seguros-db
