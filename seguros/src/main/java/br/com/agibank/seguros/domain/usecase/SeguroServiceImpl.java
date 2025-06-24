@@ -29,15 +29,28 @@ public class SeguroServiceImpl implements SeguroUseCase {
     
     @Override
     public List<Seguro> simularTodosSeguros(String cpf) {
-        boolean clienteExiste = clientesApiClient.clienteExiste(cpf);
+        log.info("Iniciando simulação de seguros para o CPF: {}", cpf);
         
-        // Sempre retorna os valores calculados, independente se o cliente existe ou não
+        boolean clienteExiste = false;
+        try {
+            log.debug("Verificando existência do cliente com CPF: {}", cpf);
+            clienteExiste = clientesApiClient.clienteExiste(cpf);
+            log.debug("Cliente com CPF {} {}", cpf, clienteExiste ? "encontrado" : "não encontrado");
+        } catch (Exception e) {
+            log.warn("Não foi possível verificar a existência do cliente com CPF: {}. Continuando com cliente inexistente. Erro: {}", 
+                   cpf, e.getMessage());
+            clienteExiste = false;
+        }
+        
+        log.info("Criando simulações para o CPF: {}, cliente existe: {}", cpf, clienteExiste);
+        
         List<Seguro> seguros = List.of(
             criarSeguroSimulacao(cpf, TipoSeguro.BRONZE, clienteExiste, calcularValorMensal(TipoSeguro.BRONZE)),
             criarSeguroSimulacao(cpf, TipoSeguro.PRATA, clienteExiste, calcularValorMensal(TipoSeguro.PRATA)),
             criarSeguroSimulacao(cpf, TipoSeguro.OURO, clienteExiste, calcularValorMensal(TipoSeguro.OURO))
         );
         
+        log.info("Simulação concluída para o CPF: {}. Total de seguros simulados: {}", cpf, seguros.size());
         return seguros;
     }
     

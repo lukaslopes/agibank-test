@@ -5,14 +5,16 @@ import br.com.agibank.seguros.infrastructure.config.ClientesApiConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Component;
-import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Recover;
+import org.springframework.retry.annotation.Retryable;
+import org.springframework.retry.support.RetrySynchronizationManager;
+import org.springframework.stereotype.Service;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
-import io.github.resilience4j.retry.annotation.Retry;
 
 @Slf4j
-@Component
+@Service
 @RequiredArgsConstructor
 public class ClientesApiClient {
 
@@ -21,38 +23,49 @@ public class ClientesApiClient {
     private final RestTemplate restTemplate;
     private final ClientesApiConfig clientesApiConfig;
     
-    @Retry(name = "clientesApi", fallbackMethod = "fallbackBuscarClientePorCpf")
     public ClienteResponse buscarClientePorCpf(String cpf) {
+        String url = clientesApiConfig.getClientesApiBaseUrl() + CLIENTES_ENDPOINT;
+        
         try {
-            String url = clientesApiConfig.getClientesApiBaseUrl()  + CLIENTES_ENDPOINT;
             ResponseEntity<ClienteResponse> response = restTemplate.getForEntity(
                 url, 
                 ClienteResponse.class, 
                 cpf);
-            
+        
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
                 return response.getBody();
             }
+            
+            log.warn("Resposta inesperada do serviço de clientes. Status: {}", response.getStatusCode());
             return null;
-        } catch (HttpClientErrorException.NotFound ex) {
-            log.info("Cliente não encontrado para o CPF: {}", cpf);
-            return null;
-        } catch (ResourceAccessException ex) {
-            log.error("Erro ao buscar cliente por CPF: " + cpf, ex);
-            throw ex;
-        } catch (Exception ex) {
-            log.error("Erro ao buscar cliente por CPF: " + cpf, ex);
-            throw new RuntimeException("Erro ao consultar serviço de clientes", ex);
+            
+        } catch (Exception e) {
+            log.error("Erro ao buscar cliente por CPF: {}", e.getMessage());
+            throw e; // Relança para o mecanismo de retry
         }
     }
     
+    @Retryable(
+        value = { ResourceAccessException.class },
+        maxAttempts = 3,
+        backoff = @Backoff(delay = 1000, multiplier = 2.0)
+    )
     public boolean clienteExiste(String cpf) {
-        return buscarClientePorCpf(cpf) != null;
+        log.info("Verificando se o cliente com CPF {} existe", cpf);
+        try {
+            ClienteResponse cliente = buscarClientePorCpf(cpf);
+            boolean existe = cliente != null;
+            log.info("Cliente com CPF {} {}", cpf, existe ? "encontrado" : "não encontrado");
+            return existe;
+        } catch (Exception e) {
+            log.error("Erro ao verificar existência do cliente com CPF {}: {}", cpf, e.getMessage());
+            throw e;
+        }
     }
     
-    // Método de fallback para o retry
-    private ClienteResponse fallbackBuscarClientePorCpf(String cpf, Exception ex) {
-        log.warn("Falha ao buscar cliente após tentativas. CPF: {}", cpf, ex);
-        throw new RuntimeException("Não foi possível consultar o serviço de clientes após várias tentativas", ex);
+    @Recover
+    public boolean recoverClienteExiste(ResourceAccessException ex, String cpf) {
+        log.error("Falha ao verificar cliente após todas as tentativas. CPF: {}", cpf, ex);
+        return false; // Retorna false em caso de falha na comunicação
     }
 }
