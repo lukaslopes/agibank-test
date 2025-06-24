@@ -205,12 +205,51 @@ class ClienteControllerTest {
 
     @Test
     void remover_DeveRetornarNoContent_QuandoClienteExistir() throws Exception {
-        UUID clienteId = UUID.fromString(ClienteFixture.CLIENTE_ID);
-        doNothing().when(clienteUseCase).removerCliente(clienteId);
-        mockMvc.perform(delete(API_URL + "/{id}", ClienteFixture.CLIENTE_ID))
-                .andExpect(status().isNoContent());
-
-        verify(clienteUseCase).removerCliente(clienteId);
+        UUID clienteId = UUID.randomUUID();
+        when(clienteUseCase.buscarClientePorId(clienteId)).thenReturn(new Cliente());
+        
+        mockMvc.perform(delete(API_URL + "/" + clienteId))
+               .andExpect(status().isNoContent());
+        
+        verify(clienteUseCase, times(1)).removerCliente(clienteId);
+    }
+    
+    @Test
+    void buscarPorCpf_DeveRetornarCliente_QuandoClienteExistir() throws Exception {
+        String cpf = "12345678901";
+        Cliente cliente = new Cliente();
+        cliente.setId(UUID.randomUUID());
+        cliente.setCpf(cpf);
+        cliente.setNome("Teste");
+        
+        ClienteDTOResponse response = new ClienteDTOResponse();
+        response.setId(cliente.getId());
+        response.setCpf(cpf);
+        response.setNome("Teste");
+        
+        when(clienteUseCase.buscarClientePorCpf(cpf)).thenReturn(cliente);
+        when(clienteMapper.toDTO(cliente)).thenReturn(response);
+        
+        mockMvc.perform(get(API_URL + "/cpf/" + cpf)
+               .contentType(MediaType.APPLICATION_JSON))
+               .andExpect(status().isOk())
+               .andExpect(jsonPath("$.id", is(cliente.getId().toString())))
+               .andExpect(jsonPath("$.cpf", is(cpf)))
+               .andExpect(jsonPath("$.nome", is("Teste")));
+        
+        verify(clienteUseCase, times(1)).buscarClientePorCpf(cpf);
+    }
+    
+    @Test
+    void buscarPorCpf_DeveRetornarNotFound_QuandoClienteNaoExistir() throws Exception {
+        String cpf = "12345678901";
+        when(clienteUseCase.buscarClientePorCpf(cpf)).thenThrow(new ClienteNaoEncontradoException("Cliente não encontrado"));
+        
+        mockMvc.perform(get(API_URL + "/cpf/" + cpf)
+               .contentType(MediaType.APPLICATION_JSON))
+               .andExpect(status().isNotFound());
+        
+        verify(clienteUseCase, times(1)).buscarClientePorCpf(cpf);
     }
 
     @Test

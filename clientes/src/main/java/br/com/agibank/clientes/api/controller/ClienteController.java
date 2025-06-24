@@ -49,6 +49,18 @@ public class ClienteController {
             @PathVariable UUID clienteId) {
         return clienteMapper.toDTO(clienteUseCase.buscarClientePorId(clienteId));
     }
+    
+    @Operation(summary = "Busca um cliente por CPF", description = "Retorna um cliente específico com base no CPF fornecido")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Cliente encontrado com sucesso"),
+        @ApiResponse(responseCode = "404", description = "Cliente não encontrado", content = @Content)
+    })
+    @GetMapping(value = "/cpf/{cpf}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ClienteDTOResponse buscarPorCpf(
+            @Parameter(description = "CPF do cliente a ser buscado", required = true, example = "12345678901")
+            @PathVariable String cpf) {
+        return clienteMapper.toDTO(clienteUseCase.buscarClientePorCpf(cpf));
+    }
 
     @Operation(summary = "Cadastra um novo cliente", description = "Cria um novo cliente com os dados fornecidos")
     @ApiResponses(value = {

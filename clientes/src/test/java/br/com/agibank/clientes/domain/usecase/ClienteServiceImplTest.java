@@ -107,12 +107,34 @@ class ClienteServiceImplTest {
     }
 
     @Test
-    void removerCliente_DeveRemoverCliente_QuandoExistir() {
-        when(clienteRepository.buscarPorId(clienteSalvo.getId()))
-                .thenReturn(Optional.of(clienteSalvo));
-        doNothing().when(clienteRepository).deletar(clienteSalvo);
-        clienteService.removerCliente(clienteSalvo.getId());
-        
+    void removerCliente_DeveRemoverCliente_QuandoClienteExistir() {
+        when(clienteRepository.buscarPorId(any(UUID.class))).thenReturn(Optional.of(clienteSalvo));
+        doNothing().when(clienteRepository).deletar(any(Cliente.class));
+
+        assertDoesNotThrow(() -> clienteService.removerCliente(clienteSalvo.getId()));
         verify(clienteRepository, times(1)).deletar(clienteSalvo);
+    }
+    
+    @Test
+    void buscarClientePorCpf_DeveRetornarCliente_QuandoClienteExistir() {
+        String cpf = "12345678901";
+        when(clienteRepository.buscarPorCpf(cpf)).thenReturn(Optional.of(clienteSalvo));
+        
+        Cliente resultado = clienteService.buscarClientePorCpf(cpf);
+        
+        assertNotNull(resultado);
+        assertEquals(clienteSalvo.getId(), resultado.getId());
+        assertEquals(clienteSalvo.getCpf(), resultado.getCpf());
+        verify(clienteRepository, times(1)).buscarPorCpf(cpf);
+    }
+    
+    @Test
+    void buscarClientePorCpf_DeveLancarExcecao_QuandoClienteNaoExistir() {
+        String cpf = "12345678901";
+        when(clienteRepository.buscarPorCpf(cpf)).thenReturn(Optional.empty());
+        
+        assertThrows(ClienteNaoEncontradoException.class, () -> 
+            clienteService.buscarClientePorCpf(cpf));
+        verify(clienteRepository, times(1)).buscarPorCpf(cpf);
     }
 }

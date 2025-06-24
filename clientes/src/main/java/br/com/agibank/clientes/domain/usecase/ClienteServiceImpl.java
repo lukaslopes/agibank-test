@@ -59,4 +59,10 @@ public class ClienteServiceImpl implements ClienteUseCase {
         Cliente cliente = buscarClientePorId(id);
         clienteRepository.deletar(cliente);
     }
+    
+    @Override
+    public Cliente buscarClientePorCpf(String cpf) {
+        return clienteRepository.buscarPorCpf(cpf)
+                .orElseThrow(() -> new ClienteNaoEncontradoException("Cliente não encontrado para o CPF: " + cpf));
+    }
 }

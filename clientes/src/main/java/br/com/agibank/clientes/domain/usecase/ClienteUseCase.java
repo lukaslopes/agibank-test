@@ -52,4 +52,13 @@ public interface ClienteUseCase {
      * @throws com.agibank.clientes.domain.exception.EntidadeEmUsoException se o cliente estiver associado a pedidos
      */
     void removerCliente(UUID id);
+    
+    /**
+     * Busca um cliente pelo CPF.
+     * 
+     * @param cpf CPF do cliente
+     * @return Cliente encontrado
+     * @throws com.agibank.clientes.domain.exception.ClienteNaoEncontradoException se o cliente não for encontrado
+     */
+    Cliente buscarClientePorCpf(String cpf);
 }
